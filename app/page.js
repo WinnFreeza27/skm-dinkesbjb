@@ -111,7 +111,6 @@ export default function Home() {
 
   return (
     <main className="flex flex-col justify-center items-center sm:mt-3">
-    <Button onClick={onSubmit}>TEST</Button>
     {questions.length > 0 ? (
       <>
       <div className="text-center bg-secondary p-3 rounded-lg">
