@@ -1,4 +1,5 @@
 "use client"
+import axios from "axios";
 
 import {
   Card,
@@ -18,19 +19,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { TypographyH1,TypographyH2, TypographyLarge } from "@/components/ui/typography";
+import { TypographyH1,TypographyH2, TypographyLarge, TypographySmall } from "@/components/ui/typography";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react";
 import { useOptions } from "@/hooks/useOptions";
-import { insertData } from "@/lib/insertData";
-import { getData } from "@/lib/getData";
-import { getQuestion } from "@/lib/getQuestion";
-import questionx from "./question";
+import { sortData } from "@/utils/sortData";
+import { mergeData } from "@/utils/mergeData";
 
 
 export default function Home() {
+  const [error, setError] = useState({status: false, message: ""})
   const [questions, setQuestions] = useState([])
   const {optionsStore, setOptionsStore} = useOptions()
   const [questionIndex, setQuestionIndex] = useState(0)
@@ -58,31 +58,49 @@ export default function Home() {
     setValue({option_id: option.id, option_text: option.option_text, question_id: question.id})
   }
   const onSubmit = async() => {
+    const sheetData = Object.keys(optionsStore).map(key => optionsStore[key].option_text);
+    const dateNow = new Date()
+    sheetData.unshift(dateNow.toLocaleString())
+
     const formData = Object.keys(optionsStore).map(key => {
-      delete optionsStore[key].option_text
-      return optionsStore[key]
+      const dataCopy = {...optionsStore[key]}
+      delete dataCopy.option_text
+      return dataCopy
     }).filter(Boolean);
+    setComplete(true)
 
     try{
-      const data = await insertData(formData)
+      const {data: response} = await axios('/api/responses', {method: 'POST', data: {formData, sheetData}})
+      if(response.error) throw(response.error)
     } catch (error) {
+      setError({status: true, message: error.message})
       console.log(error)
     }
-    setComplete(true)
   }
   const fetchQuestion = async() => {
     try{
-      const data = await getQuestion()
-      setQuestions(data)
+      const {data: response} = await axios('/api/questions')
+      if(response.error) throw new Error(response.error)
+      const sorted = sortData(response.data)
+      setQuestions(sorted)
     } catch (error) {
+      setError({status: true, message: error.message})
       console.log(error)
     }
   }
 
-  const getResponse = async() => {
+  const getData = async() => {
     try{
-      const data = await getData()
+      const {data: response} = await axios('/api/responses',{ headers:{
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin" : "http://localhost:3000"
+      }
+    })
+      if(response.error) throw new Error(response.error)
+      const merge = mergeData(response.data)
     } catch (error) {
+      setError({status: true, message: error.message})
       console.log(error)
     }
   }
@@ -93,12 +111,14 @@ export default function Home() {
 
   return (
     <main className="flex flex-col justify-center items-center sm:mt-3">
+    <Button onClick={onSubmit}>TEST</Button>
     {questions.length > 0 ? (
       <>
       <div className="text-center bg-secondary p-3 rounded-lg">
       <TypographyH1>Dinas Kesehatan Kota Banjarbaru</TypographyH1>
       <TypographyH2 className={"text-secondary-foreground"}>Survey Kepuasan Masyarakat</TypographyH2>
     </div>
+    {error.status ? <TypographyLarge className="text-red-500">{error.message}</TypographyLarge> : null}
     {complete ? (
       <TypographyLarge className={"absolute top-1/2 translate-y-1/2"}>Terimakasih telah mengisi survey!</TypographyLarge>
     ) : (
@@ -108,6 +128,24 @@ export default function Home() {
           <CardDescription>{question.question_text}</CardDescription>
         </CardHeader>
         <CardContent>
+        {question.selectable == false ? (
+          <>
+          <input
+          type={question.type}
+          max={question.type == "number" ? 100 : null}
+          value={value.response_input || ""}
+          onChange={(e) => {
+            if(e.target.value > 100) {
+              return
+            }
+            setValue({option_text: e.target.value, question_id: question.id, response_input: e.target.value})
+
+          }}
+          className="w-full border border-slate-700 outline-none p-2 rounded-lg"
+          />
+          {question.type == "number" ? <TypographySmall className="text-red-500">Input harus berupa angka dan kurang dari 100</TypographySmall> : null}
+          </>
+        ) : (
           <RadioGroup defaultValue={defaultOption}>
            {question.questions_options.map((option,index) => (
             <Label key={index} htmlFor={`r${question.id}${index}`}  
@@ -118,10 +156,11 @@ export default function Home() {
               </Label>
            ))}
           </RadioGroup>
-        </CardContent>
+      )}
+      </CardContent>
         <CardFooter className="flex justify-between flex-wrap gap-3 items-center">
           <Button onClick={handlePrev} disabled={questionIndex === 0}>Sebelumnya</Button>
-          <Button onClick={handleNext} disabled={value == ""}>Selanjutnya</Button>
+          <Button onClick={handleNext} disabled={value.option_text == "" || value.option_text == undefined}>Selanjutnya</Button>
           <AlertDialog open={modalOpen} onOpenChange={setModalOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
