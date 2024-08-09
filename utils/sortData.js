@@ -9,6 +9,5 @@ export const sortData = (data) => {
     const sortTheQuestions = sortTheOptions.sort((a, b) => {
         return a.number - b.number
     })
-    console.log(sortTheQuestions)
     return sortTheQuestions
 }

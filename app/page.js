@@ -89,22 +89,6 @@ export default function Home() {
     }
   }
 
-  const getData = async() => {
-    try{
-      const {data: response} = await axios('/api/responses',{ headers:{
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin" : "http://localhost:3000"
-      }
-    })
-      if(response.error) throw new Error(response.error)
-      const merge = mergeData(response.data)
-    } catch (error) {
-      setError({status: true, message: error.message})
-      console.log(error)
-    }
-  }
-
   useEffect(() => {
     fetchQuestion()
   }, [])
