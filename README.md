@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Aplikasi Survey Kepuasan Masyarakat
 
-## Getting Started
+## Latar Belakang
 
-First, run the development server:
+Aplikasi ini dibuat untuk mempermudah pelaksanaan survey kepuasan masyarakat secara online. Dengan menggunakan aplikasi ini, proses pengumpulan dan analisis data survey menjadi lebih efisien dan terstruktur, sehingga dapat memberikan insight yang lebih baik mengenai tingkat kepuasan masyarakat.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Teknologi yang Digunakan
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **NextJS**: Framework yang digunakan untuk membangun aplikasi ini dengan dukungan rendering sisi server (SSR) dan pembuatan aplikasi web yang cepat dan scalable.
+- **Supabase**: Digunakan untuk pengelolaan data survey, termasuk pertanyaan dan jawaban dari responden. Supabase menyediakan backend yang tangguh dan integrasi yang mudah untuk manajemen data.
+- **TailwindCSS + ShadcnUI**: Digunakan untuk membangun antarmuka pengguna (UI) yang responsif dan modern. TailwindCSS memberikan fleksibilitas dalam desain, sementara ShadcnUI menyediakan komponen-komponen UI yang sudah jadi.
+- **Google Sheets API**: Digunakan untuk memberikan akses admin agar dapat melihat dan mengelola data survey dalam format sheet yang mudah dibaca dan dianalisis.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Cara Menjalankan Proyek
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+1. **Clone repository**:
+    ```bash
+    git clone https://github.com/WinnFreeza27/skm-dinkesbjb
+    cd skm-dinkesbjb
+    ```
 
-## Learn More
+2. **Instal dependencies**:
+    ```bash
+    npm install
+    ```
 
-To learn more about Next.js, take a look at the following resources:
+3. **Konfigurasi Environment Variables**:
+   Buat file `.env.local` di root project dan tambahkan variabel-variabel berikut:
+    ```
+    NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+    GOOGLE_SHEETS_API_KEY=your-google-sheets-api-key
+    ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4. **Menjalankan Aplikasi Secara Lokal**:
+    ```bash
+    npm run dev
+    ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+5. **Build untuk Produksi**:
+    ```bash
+    npm run build
+    ```
 
-## Deploy on Vercel
+## Fitur Utama
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Survey Online**: Pengguna dapat mengisi survey secara online melalui antarmuka yang intuitif.
+- **Integrasi dengan Google Sheets**: Data survey dapat diakses dan dikelola oleh admin dalam format sheet melalui Google Sheets untuk kemudahan analisis lebih lanjut.
+- **Pengelolaan Data Survey dengan Supabase**: Supabase digunakan untuk mengelola pertanyaan dan jawaban responden, memastikan data tersimpan dengan aman dan dapat diakses dengan mudah.
+- **Desain Responsif**: Antarmuka yang dioptimalkan untuk tampilan di berbagai ukuran layar.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## Kontribusi
+
+Jika Anda ingin berkontribusi pada proyek ini, silakan buat pull request atau hubungi saya melalui informasi kontak yang tersedia.
+
+---
+
+Tahapan pembuatan dashboard admin pada aplikasi sedang dikerjakan, nantinya admin bisa mengelola data langsung melalui aplikasi, tapi integrasi dengan sheet tetap akan tersedia untuk kebutuhan lainnya
+
+i'll update soon.
