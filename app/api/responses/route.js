@@ -31,22 +31,22 @@ export async function POST(req) {
 }
 
 export async function GET(req) {
-    // const origin = req.headers.get('origin') || req.headers.get('referer')
-    // console.log(origin)
-    // if(!allowedOrigins.includes(origin)) {
-    //     console.log('Forbidden')
-    //     return new Response(JSON.stringify({ message: "Forbidden" }), {
-    //         status: 403,
-    //         headers: {
-    //           'Content-Type': 'application/json',
-    //         },
-    //       });
-    // }
-    // try{
-    //     const response = await getData()
-    //     const sheetData = await getSheetData()
-    //     return NextResponse.json({message: "Success", error: null, status: 200, data: response, sheet: sheetData})
-    // } catch (error) {
-    //     return NextResponse.json({message: "Error", error: error, status: 500, data: []})
-    // }
+    const origin = req.headers.get('origin') || req.headers.get('referer')
+    console.log(origin)
+    if(!allowedOrigins.includes(origin)) {
+        console.log('Forbidden')
+        return new Response(JSON.stringify({ message: "Forbidden" }), {
+            status: 403,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+    }
+    try{
+        const response = await getData()
+        const sheetData = await getSheetData()
+        return NextResponse.json({message: "Success", error: null, status: 200, data: response, sheet: sheetData})
+    } catch (error) {
+        return NextResponse.json({message: "Error", error: error, status: 500, data: []})
+    }
 }

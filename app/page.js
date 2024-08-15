@@ -97,7 +97,7 @@ export default function Home() {
     <main className="flex flex-col justify-center items-center sm:mt-3">
     {questions.length > 0 ? (
       <>
-      <div className="text-center bg-secondary p-3 rounded-lg">
+      <div className="text-center p-3 rounded-lg">
       <TypographyH1>Dinas Kesehatan Kota Banjarbaru</TypographyH1>
       <TypographyH2 className={"text-secondary-foreground"}>Survey Kepuasan Masyarakat</TypographyH2>
     </div>
