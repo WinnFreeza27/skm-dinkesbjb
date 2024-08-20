@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react";
 import { useOptions } from "@/hooks/useOptions";
 import { sortData } from "@/utils/sortData";
-import { mergeData } from "@/utils/mergeData";
+import ButtonLogin from "@/components/component/buttonLogin";
 
 
 export default function Home() {
@@ -95,6 +95,9 @@ export default function Home() {
 
   return (
     <main className="flex flex-col justify-center items-center sm:mt-3">
+    <div className="fixed top-0 right-0">
+      <ButtonLogin />
+    </div>
     {questions.length > 0 ? (
       <>
       <div className="text-center p-3 rounded-lg">

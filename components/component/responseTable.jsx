@@ -1,33 +1,56 @@
-import { addDays, format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
+import { addDays, format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover,PopoverContent,PopoverTrigger } from "@/components/ui/popover"
 import { useResponses } from "@/hooks/useResponses";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import React from "react";
+import { useState, useMemo } from "react"
 import { exportTableToExcel } from "@/utils/exportToExcel";
+import { TypographyLarge } from "../ui/typography";
+import { Download } from "lucide-react"
 
 export function ResponseTable() {
-  const {responses} = useResponses()
-    const [date, setDate] = ({
-      from: addDays(new Date(), -30),
-      to: new Date(),
-    })
-  if(!responses || responses.length === 0) return null
-  const headId = Object.keys(responses[0])[0]
-  console.log(responses[0])
-  const tableHead = responses[0][headId]
+  const [status , setStatus] = useState("")
+  const { responses } = useResponses();
+  const [date, setDate] = useState({
+    from: addDays(new Date(), -30),
+    to: new Date(),
+  });
 
-  const filteredData = React.useMemo(() => {
-    return data.filter((item) => {
-      if (!date?.from || !date?.to) return true
-      return item.dateJoined >= date.from && item.dateJoined <= date.to
-    })
-  }, [responses, date])
+  const headId = responses?.length > 0 ? Object.keys(responses[0])[0] : null;
+  const tableHead = headId ? responses[0][headId] : null;
 
-  console.log(filteredData)
+  const filteredData = useMemo(() => {
+    if (!date?.from && !date?.to) return true;
+
+    return responses?.filter((item) => {
+      const responseId = Object.keys(item);
+      const createdAt = new Date(item[responseId][0].responses.created_at);
+
+      // Reset the time part of the dates to midnight
+      const createdAtDateOnly = new Date(createdAt.getFullYear(), createdAt.getMonth(), createdAt.getDate());
+      const fromDate = new Date(date.from.getFullYear(), date.from.getMonth(), date.from.getDate());
+      const toDate = date.to
+        ? new Date(date.to.getFullYear(), date.to.getMonth(), date.to.getDate())
+        : fromDate;
+      return createdAtDateOnly >= fromDate && createdAtDateOnly <= toDate;
+    });
+  }, [responses, date]);
+
+  const handleExport = async () => {
+    try {
+      setStatus("loading")
+      const response = await exportTableToExcel(filteredData, date);
+      setStatus("success")
+    } catch (error) {
+      setStatus("error")
+    }
+    
+  };
+
+  console.log(filteredData);
 
   return (
     <div className="flex flex-col max-h-[800px] w-full justify-center gap-4">
@@ -37,7 +60,7 @@ export function ResponseTable() {
             id="date"
             variant={"outline"}
             className={cn(
-              "w-[300px] justify-start text-left font-normal",
+              "w-[300px] text-left mx-auto my-4 font-normal",
               !date && "text-muted-foreground"
             )}
           >
@@ -67,12 +90,15 @@ export function ResponseTable() {
           />
         </PopoverContent>
       </Popover>
-      <div className="flex-grow overflow-auto rounded-md border">
+      {filteredData && filteredData.length > 0 ? (
+        <>
+        <div className="flex-grow overflow-auto rounded-md border mx-2">
         <div className="min-w-[800px]">
           <Table>
             <TableHeader>
             <TableRow>
             <TableHead className="font-medium border">No</TableHead>
+            <TableHead className="font-medium border">Tanggal</TableHead>
                 {
                     tableHead.map((item, index) => (
                       <TableHead key={index} className="font-medium border">U{index + 1}</TableHead>
@@ -81,26 +107,43 @@ export function ResponseTable() {
             </TableRow>
             </TableHeader>
             <TableBody>
-            {
-              responses.map((response, index) => (
-                <TableRow key={index}>
-                  <TableCell className="border">{index + 1}</TableCell>
-                  {
-                    Object.keys(response).map((key) => (
-                      response[key].map((item, subIndex) => {
-                        const text = item.responses.value.option_text; // Adjust this based on your actual data structure
-                        return <TableCell className="border" key={`body-${index}-${subIndex}`}>{text}</TableCell>
-                      })
-                    ))
-                  }
-                </TableRow>
-              ))
-            }
-          </TableBody>
+              {
+                filteredData.map((response, index) => {
+                  const responseId = Object.keys(response);
+                  console.log(responseId)
+                  console.log(response)
+                  const createdAt = response[responseId][0].responses.created_at
+                  return (
+                    <TableRow key={index}>
+                      <TableCell className="border">{index + 1}</TableCell>
+                      <TableCell className="border">
+                        {format(new Date(createdAt), "dd MMM yyyy")}
+                      </TableCell>
+
+                      {response[responseId].map((item) => {
+
+                          const text = item.responses.value.option_text;
+                          return (
+                            <TableCell className="border" key={`body-${Math.floor(Math.random() * 12345)}`}>
+                              {text}
+                            </TableCell>
+                          );
+                        })
+                      }
+                    </TableRow>
+                  );
+                })
+              }
+            </TableBody>
+
           </Table>
         </div>
       </div>
-      <Button onClick={() => exportTableToExcel(responses)} className="w-max mx-auto">Export to Excel</Button>
-    </div>
+      <Button onClick={() => handleExport()} disabled={status === "loading"} className="w-max mx-auto">{status === "loading" ? "Loading..." : "Export to Excel" }</Button>
+      </>
+      ) : (
+        <TypographyLarge className="text-red-500 mx-auto">Tidak ada data ditemukan pada periode yang dipilih.</TypographyLarge>
+      )}
+      </div>
   )
 }
