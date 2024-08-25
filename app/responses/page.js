@@ -7,18 +7,16 @@ import { mergeData } from "@/utils/mergeData";
 import { useResponses } from "@/hooks/useResponses";
 import { useSessionStore } from "@/hooks/useSessionStore";
 import ButtonLogin from "@/components/component/buttonLogin";
-import supabase from "@/utils/supabaseClient";  
-import { Button } from "@/components/ui/button";
+import LoadingSpinner from "@/components/component/loading";
 
 
 export default function Responses() {
     const {isAuthenticated} = useSessionStore()
-    const [status, setStatus] = useState("")
+    const [status, setStatus] = useState("loading")
     const {setResponses} = useResponses()
 
     useEffect(() => {
         const fetchResponses = async() => {
-            setStatus("loading")
             try{
               const {data: response} = await axios('http://localhost:3000/api/responses',{ headers:{
                 "Content-Type": "application/json",
@@ -32,7 +30,7 @@ export default function Responses() {
                 [key]: merge.response_id[key]
                 }));
                 setResponses(transformedData)
-                setStatus("success")
+                setStatus("")
             } catch (error) {
               console.log(error)
               setStatus("error")
@@ -41,20 +39,30 @@ export default function Responses() {
         fetchResponses()
     }, [])
 
+    console.log(status)
+
     return (
       <div className="mx-auto flex flex-col justify-center items-center mt-4">
-      <Button onClick={() => supabase.auth.signOut()}>Test Logout</Button>
-      {isAuthenticated ? (
-        <>
-        <h1 className="text-2xl font-bold mb-4">Responses</h1>
-        { status === "success" ? <ResponseTable /> : status === "error" ? <p className="text-red-500">Error: {status}</p> : <p className="font-bold">Loading...</p> }
-        </>
-      ) : (
-        <>
-        <p className="font-bold">Tolong login terlebih dahulu untuk melihat data respondent</p>
-        <ButtonLogin /> 
-        </>
-      )}
+        {isAuthenticated && status == "" ? (
+          <>
+            <h1 className="text-2xl font-bold mb-4">Responses</h1>
+            <ResponseTable />
+          </>
+        ) : (
+          <>
+            {status === "loading" ? (
+              <LoadingSpinner />
+            ) : (
+              <>
+                <p className="font-bold">
+                  Tolong login terlebih dahulu untuk melihat data respondent
+                </p>
+                <ButtonLogin />
+              </>
+            )}
+          </>
+        )}
       </div>
-    )
+    );
+    
 }

@@ -1,25 +1,38 @@
-import crypto from 'crypto';
+// Assuming you have the public key as a string
+const publicKeyBase64 = process.env.NEXT_PUBLIC_RSA_PUBLIC_KEY;
+const publicKeyPem = Buffer.from(publicKeyBase64, 'base64').toString('utf-8');
+// Function to convert PEM key to CryptoKey
+async function importPublicKey(pem) {
+  // Remove PEM header/footer and decode Base64
+  const base64Key = pem
+    .replace(/-----(BEGIN|END) PUBLIC KEY-----/g, '')
+    .replace(/\s+/g, '');
+  const binaryDer = Buffer.from(base64Key, 'base64');
 
-// Get the Base64 encoded public key from the environment variable
-const publicKeyBase64 = process.env.NEXT_PUBLIC_PUBLICKEY;
+  // Import the binary DER key into a CryptoKey
+  return window.crypto.subtle.importKey(
+    'spki', // Key format
+    binaryDer, // Key data
+    {
+      name: 'RSA-OAEP', // Algorithm
+      hash: { name: 'SHA-256' } // Hashing algorithm
+    },
+    false, // Not extractable
+    ['encrypt'] // Key usages
+  );
+}
 
-// Decode the Base64 string into its original binary form
-const publicKeyBuffer = Buffer.from(publicKeyBase64, 'base64');
+// Function to encrypt data using the public key
+export async function encryptData(data) {
+  const publicKey = await importPublicKey(publicKeyPem);
 
-// Convert the binary data back into a string
-const publicKey = publicKeyBuffer.toString('utf-8');
+  const encryptedBuffer = await window.crypto.subtle.encrypt(
+    {
+      name: 'RSA-OAEP', // RSA with Optimal Asymmetric Encryption Padding
+    },
+    publicKey,
+    new TextEncoder().encode(data) // Convert the data to a Uint8Array
+  );
 
-// Add the PEM headers and split into lines of 64 characters
-const formattedPublicKey = `${publicKey.match(/.{1,64}/g).join('\n')}`;
-
-export const encryptData = (data) => {
-    console.log(formattedPublicKey); // This should output the correctly formatted public key
-    try {
-        const buffer = Buffer.from(JSON.stringify(data), 'utf8');
-        const encryptedData = crypto.publicEncrypt(formattedPublicKey, buffer);
-        return encryptedData.toString('base64');
-    } catch (error) {
-        console.error("Encryption error:", error);
-        throw error;
-    }
-};
+  return Buffer.from(encryptedBuffer).toString('base64'); // Convert ArrayBuffer to Base64 string
+}

@@ -37,7 +37,6 @@ export const mergeData = (rawData) => {
    })
 
     Object.keys(obj.response_id).map((key) => {
-    console.log(key)
     obj.response_id[key] = sortData(obj.response_id[key])
    })
    return obj

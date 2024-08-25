@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useRef, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,9 +9,13 @@ import { EyeIcon, EyeOffIcon, X } from 'lucide-react'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { encryptData } from '@/utils/encrypt'
-import { decryptData } from '@/utils/decrypt'
+import { useSessionStore } from '@/hooks/useSessionStore'
+import supabase from '@/utils/supabaseClient'
+import { usePopupForm } from '@/hooks/usePopupForm'
 
-export default function FormLogin({ isOpen, setIsOpen }) {
+export default function FormLogin() {
+  const { isOpen, setIsOpen } = usePopupForm()
+  const {setUser, clearUser} = useSessionStore()
   const [showPassword, setShowPassword] = useState(false)
   const [password, setPassword] = useState('')
   const [email, setEmail] = useState('')
@@ -17,20 +23,23 @@ export default function FormLogin({ isOpen, setIsOpen }) {
   const [status, setStatus] = useState('')
   const popupRef = useRef(null)
 
+
   const router = useRouter()
+  const handleClickOutside = (event) => {
+    if (popupRef.current && !popupRef.current.contains(event.target) && isOpen.login) {
+      console.log('x');
+      setIsOpen({login: false});
+    }
+  };
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (popupRef.current && !popupRef.current.contains(event.target)) {
-        setIsOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen.login]); 
+
+
 
   const validateEmail = (email) => {
     const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
@@ -60,16 +69,32 @@ export default function FormLogin({ isOpen, setIsOpen }) {
     setStatus('loading')
     
     try {
-      const encryptedData = await encryptData(JSON.stringify({email, password}))
-      const decryptedData = await decryptData(encryptedData)
-      console.log(encryptedData)
-      console.log(decryptedData)
-      // const user = await axios.post('/api/auth', {encryptData: encryptedUser});
-      console.log(user)
-      if (user.status === 200) {
-        setIsOpen(false)
-        setStatus('success')
+      const encryptedData = await encryptData(JSON.stringify({ email, password }));
+      console.log(encryptedData);
+
+      const response = await axios.post('/api/auth/signin', {
+        encryptData: encryptedData,
+      }, {
+        headers: {
+          'Content-Type': 'application/json', // Ensure the correct header is set
+        },
+      });
+
+      console.log('Response data:', response.data);
+      
+      if (response.data.sessionToken) {
+        const accessToken = response.data.sessionToken;
+        const refreshToken = response.data.refreshToken; // Make sure your backend also returns the refresh token
+
+        // Set the session manually using Supabase's setSession method
+        await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        console.log('Session set successfully');
         router.push('/responses')
+        setIsOpen({login: false});
       }
     } catch (error) {
       console.log(error)
@@ -77,8 +102,8 @@ export default function FormLogin({ isOpen, setIsOpen }) {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-bgprimary to-bgsecondary p-4">
-      {isOpen && (
+    <div className={`fixed flex flex-col items-center w-full justify-center h-screen top-0 bg-gradient-to-br from-bgprimary to-bgsecondary p-4 z-50 ${isOpen.login ? 'block' : 'hidden'}`}>
+      {isOpen.login && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[999]">
         <div ref={popupRef} className="relative w-full max-w-md">
             <Card>
@@ -86,7 +111,7 @@ export default function FormLogin({ isOpen, setIsOpen }) {
                 className="absolute right-2 top-2 p-1"
                 variant="ghost"
                 size="icon"
-                onClick={() => setIsOpen(false)}
+                onClick={() => setIsOpen({login: false})}
               >
                 <X className="h-4 w-4" />
                 <span className="sr-only">Close</span>

@@ -19,18 +19,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { TypographyH1,TypographyH2, TypographyLarge, TypographySmall } from "@/components/ui/typography";
+import { TypographyH1,TypographyH2, TypographyLarge, TypographySmall, TypographyH3 } from "@/components/ui/typography";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react";
 import { useOptions } from "@/hooks/useOptions";
 import { sortData } from "@/utils/sortData";
-import ButtonLogin from "@/components/component/buttonLogin";
+import LoadingSpinner from "@/components/component/loading";
 
 
 export default function Home() {
   const [error, setError] = useState({status: false, message: ""})
+  const [status, setStatus] = useState("")
   const [questions, setQuestions] = useState([])
   const {optionsStore, setOptionsStore} = useOptions()
   const [questionIndex, setQuestionIndex] = useState(0)
@@ -78,11 +79,13 @@ export default function Home() {
     }
   }
   const fetchQuestion = async() => {
+    setStatus("loading")
     try{
       const {data: response} = await axios('/api/questions')
       if(response.error) throw new Error(response.error)
       const sorted = sortData(response.data)
       setQuestions(sorted)
+      setStatus("")
     } catch (error) {
       setError({status: true, message: error.message})
       console.log(error)
@@ -93,25 +96,28 @@ export default function Home() {
     fetchQuestion()
   }, [])
 
+  if(status == "loading") {
+    return (
+      <LoadingSpinner />
+    )
+  }
+
   return (
     <main className="flex flex-col justify-center items-center sm:mt-3">
-    <div className="fixed top-0 right-0">
-      <ButtonLogin />
-    </div>
     {questions.length > 0 ? (
       <>
       <div className="text-center p-3 rounded-lg">
       <TypographyH1>Dinas Kesehatan Kota Banjarbaru</TypographyH1>
-      <TypographyH2 className={"text-secondary-foreground"}>Survey Kepuasan Masyarakat</TypographyH2>
     </div>
     {error.status ? <TypographyLarge className="text-red-500">{error.message}</TypographyLarge> : null}
     {complete ? (
       <TypographyLarge className={"absolute top-1/2 translate-y-1/2"}>Terimakasih telah mengisi survey!</TypographyLarge>
     ) : (
-      <Card className="w-full sm:w-96 mt-2">
+      <Card className="w-full sm:w-96 mt-2 h-[32rem]">
         <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">No. {questionIndex + 1}/{questions.length}</CardTitle>
-          <CardDescription>{question.question_text}</CardDescription>
+          <TypographyH3 className={"text-secondary-foreground"}>Survey Kepuasan Masyarakat</TypographyH3>
+          <CardTitle className="text-md sm:text-lg text-slate-800">No. {questionIndex + 1}/{questions.length}</CardTitle>
+          <CardDescription className="text-primary font-bold text-lg">{question.question_text}</CardDescription>
         </CardHeader>
         <CardContent>
         {question.selectable == false ? (
@@ -135,7 +141,7 @@ export default function Home() {
           <RadioGroup defaultValue={defaultOption}>
            {question.questions_options.map((option,index) => (
             <Label key={index} htmlFor={`r${question.id}${index}`}  
-            className="flex items-center space-x-2 bg-secondary text-primary w-full p-3 gap-3 cursor-pointer" 
+            className={`flex items-center space-x-2 text-primary w-full p-4 gap-3 cursor-pointer rounded-lg border bg-transparent ${value.option_text == option.option_text ? "bg-[#393E46] text-secondary border-transparent" : ""}`}
             onClick={() => handleOptionSelect(option)}>
               <RadioGroupItem value={option.option_text} id={`r${question.id}${index}`} checked={value.option_text == option.option_text}/>
               {option.option_text}
@@ -145,8 +151,6 @@ export default function Home() {
       )}
       </CardContent>
         <CardFooter className="flex justify-between flex-wrap gap-3 items-center">
-          <Button onClick={handlePrev} disabled={questionIndex === 0}>Sebelumnya</Button>
-          <Button onClick={handleNext} disabled={value.option_text == "" || value.option_text == undefined}>Selanjutnya</Button>
           <AlertDialog open={modalOpen} onOpenChange={setModalOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -166,6 +170,10 @@ export default function Home() {
     )}
     </>
     ) : null}
+    <div className="flex justify-between w-full sm:w-96 mt-4">
+        <Button onClick={handlePrev} disabled={questionIndex === 0} className="p-6">Sebelumnya</Button>
+        <Button onClick={handleNext} disabled={value.option_text == "" || value.option_text == undefined} className="p-6">Selanjutnya</Button>
+    </div>
     </main>
   );
 }

@@ -7,9 +7,10 @@ import { Popover,PopoverContent,PopoverTrigger } from "@/components/ui/popover"
 import { useResponses } from "@/hooks/useResponses";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { useState, useMemo } from "react"
-import { exportTableToExcel } from "@/utils/exportToExcel";
+import { saveAs } from "file-saver"
 import { TypographyLarge } from "../ui/typography";
-import { Download } from "lucide-react"
+import axios from "axios"
+import { downloadBlob } from "@/utils/downloadBlob"
 
 export function ResponseTable() {
   const [status , setStatus] = useState("")
@@ -41,16 +42,19 @@ export function ResponseTable() {
 
   const handleExport = async () => {
     try {
-      setStatus("loading")
-      const response = await exportTableToExcel(filteredData, date);
-      setStatus("success")
-    } catch (error) {
-      setStatus("error")
-    }
-    
-  };
+        setStatus("loading");
 
-  console.log(filteredData);
+        const response = await axios.post("/api/download", { responses: filteredData, date }, {
+            responseType: 'blob'
+        });
+
+        downloadBlob(response.data, `responses-${format(new Date(), "dd-MM-yyyy")}.xlsx`);
+        setStatus("success");
+    } catch (error) {
+        console.error("Error:", error);
+        setStatus("error");
+    }
+};
 
   return (
     <div className="flex flex-col max-h-[800px] w-full justify-center gap-4">
@@ -110,8 +114,6 @@ export function ResponseTable() {
               {
                 filteredData.map((response, index) => {
                   const responseId = Object.keys(response);
-                  console.log(responseId)
-                  console.log(response)
                   const createdAt = response[responseId][0].responses.created_at
                   return (
                     <TableRow key={index}>
@@ -124,7 +126,7 @@ export function ResponseTable() {
 
                           const text = item.responses.value.option_text;
                           return (
-                            <TableCell className="border" key={`body-${Math.floor(Math.random() * 12345)}`}>
+                            <TableCell className="border" key={`body-${Math.floor(Math.random() * 10000)} with-${index}`}>
                               {text}
                             </TableCell>
                           );

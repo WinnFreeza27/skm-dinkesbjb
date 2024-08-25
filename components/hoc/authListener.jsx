@@ -1,28 +1,42 @@
-"use client"
+"use client";
 
 import supabase from "@/utils/supabaseClient";
 import { useEffect } from "react";
 import { useSessionStore } from "@/hooks/useSessionStore";
 
 const AuthListener = () => {
-    const {user, isAuthenticated, setUser, clearUser, trueId} = useSessionStore()
-    useEffect(() => {
-        const {data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log(session?.user.id)
-            console.log(trueId)
-            if (session?.user && session?.user.id == trueId) {
-                setUser(session.user, session.user.role == "authenticated")
-            } else {
-                clearUser()
-            }
-        })
-        return () => {
-            authListener?.subscription.unsubscribe()
-        }
-    }, [setUser, clearUser])
-    console.log(user)
-    console.log(isAuthenticated)
-    return null;
-}
+  const { user, setUser, clearUser } = useSessionStore();
 
-export default AuthListener
+  useEffect(() => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        if (!user || session.user.id !== user.id) {
+          setUser(session.user, true);
+        }
+      } else {
+        clearUser();
+      }
+    };
+
+    getSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        if (!user || session.user.id !== user.id) {
+          setUser(session.user, true);
+        }
+      } else {
+        clearUser();
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [user, setUser, clearUser]);
+
+  return null;
+};
+
+export default AuthListener;
